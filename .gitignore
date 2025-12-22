@@ -1,0 +1,76 @@
+# Neural Firewall Guardian - Git Ignore
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# Virtual Environments
+venv/
+ENV/
+env/
+.venv
+
+# ML Models & Training Data
+models/*.pkl
+models/*.joblib
+*.h5
+*.pt
+*.pth
+*.onnx
+
+# Logs & Data
+logs/
+*.log
+*.jsonl
+*.csv
+ai_alerts.jsonl
+
+# Credentials & Secrets
+.env
+*.pem
+*.key
+id_rsa*
+*.pfx
+config.env
+secrets.yaml
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Testing
+.pytest_cache/
+.coverage
+htmlcov/
+.tox/
+
+# Temporary
+*.tmp
+*.bak
+*.cache
+.cache/
+
+# System
+Thumbs.db

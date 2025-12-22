@@ -1,0 +1,57 @@
+# Neural Firewall Guardian - Configuration Example
+# Copy this file to config.env and customize for your environment
+
+# ========================================
+# pfSense Connection Settings
+# ========================================
+PFSENSE_HOST=192.168.1.1
+PFSENSE_USER=admin
+# Note: Use SSH key authentication, not passwords!
+
+# ========================================
+# Machine Learning Settings
+# ========================================
+TRAINING_EVENTS=5000
+MODEL_PATH=./models/
+# Retrain models periodically with fresh data
+RETRAIN_INTERVAL_HOURS=168  # Weekly
+
+# ========================================
+# Threat Response Settings
+# ========================================
+AUTO_BLOCK=true
+DRY_RUN=false
+BLOCK_DURATION_HOURS=24
+
+# Severity thresholds (0.0 - 1.0)
+CRITICAL_THRESHOLD=0.85
+HIGH_THRESHOLD=0.70
+MEDIUM_THRESHOLD=0.50
+LOW_THRESHOLD=0.30
+
+# ========================================
+# Monitoring & Metrics
+# ========================================
+PROMETHEUS_PORT=9102
+ENABLE_METRICS=true
+LOG_LEVEL=INFO
+
+# ========================================
+# Performance Tuning
+# ========================================
+MAX_ALERTS_PER_SECOND=1000
+PROCESSING_THREADS=4
+
+# ========================================
+# Whitelisted IPs (never block these)
+# ========================================
+# Comma-separated list
+WHITELIST_IPS=192.168.1.100,192.168.1.1
+
+# ========================================
+# Alert Filtering
+# ========================================
+# Skip these signature IDs (comma-separated)
+IGNORE_SIGNATURE_IDS=2200073,2200074
+# Skip alerts matching these patterns
+IGNORE_PATTERNS=checksum,invalid ack

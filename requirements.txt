@@ -1,0 +1,17 @@
+# Neural Firewall Guardian - Python Dependencies
+
+# Core ML & Data Science
+numpy>=1.21.0
+scikit-learn>=1.0.0
+
+# Optional: Enhanced Performance
+# scipy>=1.7.0
+
+# Optional: Monitoring & Metrics (if not using system Prometheus)
+# prometheus-client>=0.12.0
+
+# Development Dependencies (optional)
+# pytest>=7.0.0
+# pytest-cov>=3.0.0
+# black>=22.0.0
+# flake8>=4.0.0
