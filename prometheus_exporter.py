@@ -38,6 +38,12 @@ class SuricataMetrics:
         self.threat_score_sum = 0.0
         self.critical_threats = 0
         self.high_threats = 0
+        self.training_examples_collected = 0
+
+    def record_training_example(self):
+        """Record a training example collected"""
+        with self.lock:
+            self.training_examples_collected += 1
 
     def record_alert(self, severity, action, source_ip, signature, threat_score, processing_time=0.0):
         """Record an alert with all its metadata"""
@@ -145,6 +151,11 @@ class SuricataMetrics:
             metrics.append('# TYPE suricata_ai_top_source_ips gauge')
             for ip, count in sorted(self.top_source_ips.items(), key=lambda x: x[1], reverse=True)[:10]:
                 metrics.append(f'suricata_ai_top_source_ips{{source_ip="{ip}"}} {count}')
+
+            # Training data collection
+            metrics.append('# HELP suricata_ai_training_examples_total Training examples collected for supervised learning')
+            metrics.append('# TYPE suricata_ai_training_examples_total counter')
+            metrics.append(f'suricata_ai_training_examples_total {self.training_examples_collected}')
 
             return '\n'.join(metrics) + '\n'
 

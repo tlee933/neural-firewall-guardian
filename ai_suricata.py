@@ -13,6 +13,7 @@ from alert_collector import SuricataAlertCollector
 from ml_classifier import ThreatClassifier
 from auto_responder import AutoResponder
 from prometheus_exporter import PrometheusExporter
+from training_data_collector import TrainingDataCollector
 
 class AISuricata:
     def __init__(self, pfsense_host="192.168.1.1", pfsense_user="admin", dry_run=False, auto_block=False, prometheus_port=9102):
@@ -32,6 +33,9 @@ class AISuricata:
         # Prometheus exporter
         self.exporter = PrometheusExporter(port=prometheus_port)
         self.exporter.start()
+
+        # Training data collector (for future supervised learning)
+        self.data_collector = TrainingDataCollector(enabled=True)
 
         # Load pre-trained models if available
         if self.classifier.load_models():
@@ -93,6 +97,14 @@ class AISuricata:
         # Update statistics
         self.threat_count[classification["severity"]] += 1
 
+        # Log classification for training data collection
+        feature_vector = self.classifier.extract_ml_features(alert_data)
+        self.data_collector.log_classification(
+            alert_data=alert_data,
+            classification=classification,
+            features_vector=feature_vector.tolist() if hasattr(feature_vector, 'tolist') else feature_vector
+        )
+
         # Record metrics to Prometheus
         processing_time = time.time() - start_time
         self.exporter.metrics.record_alert(
@@ -103,6 +115,7 @@ class AISuricata:
             threat_score=classification["threat_score"],
             processing_time=processing_time
         )
+        self.exporter.metrics.record_training_example()
 
         # Step 3: Display alert
         self.display_alert(alert_data, classification)
