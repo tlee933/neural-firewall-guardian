@@ -40,10 +40,36 @@ class SuricataMetrics:
         self.high_threats = 0
         self.training_examples_collected = 0
 
+        # Training data labels
+        self.labeled_examples = 0
+        self.labels_by_type = defaultdict(int)  # BENIGN, THREAT, FALSE_POSITIVE
+
+        # ML model stats
+        self.anomaly_scores = []  # Recent anomaly scores
+        self.pattern_detections = defaultdict(int)  # port_scan, dos_attempt, etc
+
     def record_training_example(self):
         """Record a training example collected"""
         with self.lock:
             self.training_examples_collected += 1
+
+    def record_label(self, label_type):
+        """Record a labeled training example"""
+        with self.lock:
+            self.labeled_examples += 1
+            self.labels_by_type[label_type] += 1
+
+    def record_pattern_detection(self, pattern_name):
+        """Record an attack pattern detection"""
+        with self.lock:
+            self.pattern_detections[pattern_name] += 1
+
+    def record_anomaly_score(self, score):
+        """Record anomaly score (keep last 1000)"""
+        with self.lock:
+            self.anomaly_scores.append(score)
+            if len(self.anomaly_scores) > 1000:
+                self.anomaly_scores.pop(0)
 
     def record_alert(self, severity, action, source_ip, signature, threat_score, processing_time=0.0):
         """Record an alert with all its metadata"""
@@ -156,6 +182,47 @@ class SuricataMetrics:
             metrics.append('# HELP suricata_ai_training_examples_total Training examples collected for supervised learning')
             metrics.append('# TYPE suricata_ai_training_examples_total counter')
             metrics.append(f'suricata_ai_training_examples_total {self.training_examples_collected}')
+
+            # Labeled training examples
+            metrics.append('# HELP suricata_ai_labeled_examples_total Labeled training examples')
+            metrics.append('# TYPE suricata_ai_labeled_examples_total counter')
+            metrics.append(f'suricata_ai_labeled_examples_total {self.labeled_examples}')
+
+            # Labeling progress percentage
+            labeling_progress = (self.labeled_examples / max(1, self.training_examples_collected)) * 100
+            metrics.append('# HELP suricata_ai_labeling_progress_percent Percentage of examples labeled')
+            metrics.append('# TYPE suricata_ai_labeling_progress_percent gauge')
+            metrics.append(f'suricata_ai_labeling_progress_percent {labeling_progress:.2f}')
+
+            # Labels by type
+            metrics.append('# HELP suricata_ai_labels_by_type_total Labels by type (BENIGN, THREAT, FALSE_POSITIVE)')
+            metrics.append('# TYPE suricata_ai_labels_by_type_total counter')
+            for label_type, count in self.labels_by_type.items():
+                metrics.append(f'suricata_ai_labels_by_type_total{{label_type="{label_type}"}} {count}')
+
+            # Attack pattern detections
+            metrics.append('# HELP suricata_ai_pattern_detections_total Attack patterns detected')
+            metrics.append('# TYPE suricata_ai_pattern_detections_total counter')
+            for pattern, count in self.pattern_detections.items():
+                metrics.append(f'suricata_ai_pattern_detections_total{{pattern="{pattern}"}} {count}')
+
+            # Anomaly score statistics
+            if self.anomaly_scores:
+                avg_anomaly = sum(self.anomaly_scores) / len(self.anomaly_scores)
+                max_anomaly = max(self.anomaly_scores)
+                min_anomaly = min(self.anomaly_scores)
+
+                metrics.append('# HELP suricata_ai_avg_anomaly_score Average anomaly score (last 1000)')
+                metrics.append('# TYPE suricata_ai_avg_anomaly_score gauge')
+                metrics.append(f'suricata_ai_avg_anomaly_score {avg_anomaly:.3f}')
+
+                metrics.append('# HELP suricata_ai_max_anomaly_score Maximum anomaly score (last 1000)')
+                metrics.append('# TYPE suricata_ai_max_anomaly_score gauge')
+                metrics.append(f'suricata_ai_max_anomaly_score {max_anomaly:.3f}')
+
+                metrics.append('# HELP suricata_ai_min_anomaly_score Minimum anomaly score (last 1000)')
+                metrics.append('# TYPE suricata_ai_min_anomaly_score gauge')
+                metrics.append(f'suricata_ai_min_anomaly_score {min_anomaly:.3f}')
 
             return '\n'.join(metrics) + '\n'
 

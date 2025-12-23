@@ -163,8 +163,8 @@ class ThreatReviewer:
         # Feature Highlights
         features = example.get('features', {})
         print(self.color("Key Features:", 'BOLD'))
-        print(f"  Src Port: {features.get('src_port', 0):5d}  "
-              f"Dest Port: {features.get('dest_port', 0):5d}  "
+        print(f"  Src Port: {int(features.get('src_port', 0)):5d}  "
+              f"Dest Port: {int(features.get('dest_port', 0)):5d}  "
               f"IP Alert Count: {int(features.get('ip_alert_count', 0))}")
         print(f"  Packets: ↑{int(features.get('packets_toserver', 0))} ↓{int(features.get('packets_toclient', 0))}  "
               f"Bytes: ↑{int(features.get('bytes_toserver', 0))} ↓{int(features.get('bytes_toclient', 0))}")

@@ -14,6 +14,7 @@ from ml_classifier import ThreatClassifier
 from auto_responder import AutoResponder
 from prometheus_exporter import PrometheusExporter
 from training_data_collector import TrainingDataCollector
+from carbon_exporter import CarbonExporter, PeriodicCarbonExporter
 
 class AISuricata:
     def __init__(self, pfsense_host="192.168.1.1", pfsense_user="admin", dry_run=False, auto_block=False, prometheus_port=9102):
@@ -33,6 +34,11 @@ class AISuricata:
         # Prometheus exporter
         self.exporter = PrometheusExporter(port=prometheus_port)
         self.exporter.start()
+
+        # Carbon/Graphite exporter (optional)
+        self.carbon = CarbonExporter(carbon_host='localhost', carbon_port=2003, enabled=True)
+        self.carbon_thread = PeriodicCarbonExporter(self.carbon, self.exporter.metrics, interval=10)
+        self.carbon_thread.start()
 
         # Training data collector (for future supervised learning)
         self.data_collector = TrainingDataCollector(enabled=True)
@@ -116,6 +122,15 @@ class AISuricata:
             processing_time=processing_time
         )
         self.exporter.metrics.record_training_example()
+
+        # Record anomaly score
+        if "anomaly_score" in classification:
+            self.exporter.metrics.record_anomaly_score(classification["anomaly_score"])
+
+        # Record attack patterns detected
+        for pattern in classification.get("attack_patterns", []):
+            pattern_name = pattern.get("pattern", "unknown")
+            self.exporter.metrics.record_pattern_detection(pattern_name)
 
         # Step 3: Display alert
         self.display_alert(alert_data, classification)
