@@ -347,3 +347,42 @@ Built on:
 - pfSense Firewall (https://www.pfsense.org/)
 - scikit-learn ML library
 - Emerging Threats ruleset
+
+## 🎯 Quick Access Commands
+
+After installation, the review tool and commands are accessible from your shell:
+
+### Shell Banner Commands
+
+Type `banner` to see the full command reference including:
+
+**Security Monitoring:**
+- `cd ~/pfsense/ai_suricata` - Navigate to IDS directory
+- `./manage.sh watch` - Live threat monitoring
+- `./manage.sh threats` - HIGH/CRITICAL alerts only
+- `./manage.sh stats` - Statistics dashboard
+
+**Training Data Review:**
+- `./review_threats.py --stats-only` - Check labeling progress
+- `./review_threats.py --severity CRITICAL` - Review critical threats
+- `./review_threats.py --action BLOCK` - Validate blocked IPs
+- `training_data/` - JSONL log files
+- `docs/TRAINING_DATA.md` - Full labeling guide
+
+### Quick Stats
+
+```bash
+# Check current collection
+curl -s http://localhost:9102/metrics | grep training_examples
+
+# View today's data
+ls -lh ~/pfsense/ai_suricata/training_data/
+
+# Count collected examples
+wc -l ~/pfsense/ai_suricata/training_data/decisions.*.jsonl
+```
+
+---
+
+**Commands are integrated into your shell banner for easy access!** Type `banner` after installation to see all available commands.
+
