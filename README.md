@@ -34,6 +34,7 @@ AI-powered security system for pfSense using Suricata IDS with machine learning 
 ### Technical Documentation
 - **[Machine Learning Architecture](docs/MACHINE_LEARNING.md)** - Deep dive into ML models, feature engineering, and threat scoring
 - **[Development Roadmap](docs/ROADMAP.md)** - Future enhancements including supervised learning and advanced features
+- **[Training Data Guide](docs/TRAINING_DATA.md)** - How to review and label classification decisions for supervised learning
 
 ### Key Features
 - **Unsupervised Learning**: IsolationForest anomaly detection (99.96% accuracy in production)
@@ -102,7 +103,30 @@ Logs ML classification decisions for building supervised learning datasets.
 - 6-month retention policy
 - Tracks all 16 feature dimensions + classification result
 
-### 6. **ai_suricata.py**
+### 6. **review_threats.py**
+Interactive CLI tool for reviewing and labeling training data.
+
+**Features:**
+- Color-coded threat display
+- Filter by severity, action, or time range
+- One-key labeling (T/B/F/S/N/Q)
+- Optional notes for important labels
+- Session statistics and progress tracking
+- Batch review workflows
+
+**Usage:**
+```bash
+# Review HIGH and CRITICAL from last 24h
+./review_threats.py --severity HIGH,CRITICAL --since 24
+
+# Review blocked IPs
+./review_threats.py --action BLOCK
+
+# Show statistics
+./review_threats.py --stats-only
+```
+
+### 7. **ai_suricata.py**
 Main integrated system combining all components.
 
 ## Installation & Setup
