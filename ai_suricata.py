@@ -56,6 +56,12 @@ class AISuricata:
         """Handle Ctrl+C gracefully"""
         print("\n\n[*] Shutting down AI Suricata...")
         self.running = False
+
+        # Save final state
+        if hasattr(self.exporter, 'state_manager') and self.exporter.state_manager:
+            print("[*] Saving state before exit...")
+            self.exporter.state_manager.save_state(self.exporter.metrics)
+
         self.print_final_summary()
         sys.exit(0)
 

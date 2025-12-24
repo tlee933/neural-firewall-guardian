@@ -8,6 +8,7 @@ from http.server import HTTPServer, BaseHTTPRequestHandler
 from threading import Thread, Lock
 from collections import defaultdict
 import time
+from state_manager import StateManager, PeriodicStateSaver
 
 class SuricataMetrics:
     """Thread-safe metrics storage for AI Suricata"""
@@ -255,17 +256,33 @@ class MetricsHandler(BaseHTTPRequestHandler):
 class PrometheusExporter:
     """Prometheus metrics exporter for AI Suricata"""
 
-    def __init__(self, port=9102):
+    def __init__(self, port=9102, enable_persistence=True):
         self.port = port
         self.metrics = SuricataMetrics()
         self.server = None
         self.thread = None
+        self.enable_persistence = enable_persistence
+
+        # State persistence
+        if self.enable_persistence:
+            self.state_manager = StateManager()
+            self.state_saver = None
+        else:
+            self.state_manager = None
+            self.state_saver = None
 
         # Set metrics store for handler
         MetricsHandler.metrics_store = self.metrics
 
     def start(self):
         """Start the metrics HTTP server in a background thread"""
+        # Restore persisted state
+        if self.enable_persistence and self.state_manager:
+            self.state_manager.restore_state(self.metrics)
+            # Start periodic state saver
+            self.state_saver = PeriodicStateSaver(self.state_manager, self.metrics, interval=60)
+            self.state_saver.start()
+
         self.server = HTTPServer(('0.0.0.0', self.port), MetricsHandler)
         self.thread = Thread(target=self.server.serve_forever, daemon=True)
         self.thread.start()
@@ -273,6 +290,13 @@ class PrometheusExporter:
 
     def stop(self):
         """Stop the metrics HTTP server"""
+        # Save state before shutdown
+        if self.enable_persistence and self.state_manager:
+            print("[*] Saving final state...")
+            self.state_manager.save_state(self.metrics)
+            if self.state_saver:
+                self.state_saver.stop()
+
         if self.server:
             self.server.shutdown()
             self.thread.join()

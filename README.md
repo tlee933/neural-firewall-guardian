@@ -34,13 +34,14 @@ AI-powered security system for pfSense using Suricata IDS with machine learning 
 ### Technical Documentation
 - **[Machine Learning Architecture](docs/MACHINE_LEARNING.md)** - Deep dive into ML models, feature engineering, and threat scoring
 - **[Development Roadmap](docs/ROADMAP.md)** - Future enhancements including supervised learning and advanced features
-- **[Training Data Guide](docs/TRAINING_DATA.md)** - How to review and label classification decisions for supervised learning
 
 ### Key Features
 - **Unsupervised Learning**: IsolationForest anomaly detection (99.96% accuracy in production)
 - **Behavioral Profiling**: Real-time per-IP attack pattern tracking
 - **Training Data Collection**: Automatic logging of classification decisions for future supervised learning
-- **Prometheus Integration**: 10+ security metrics exposed for monitoring
+- **Persistent State Management**: Metrics survive service restarts (auto-save every 60s)
+- **Dual Monitoring**: Prometheus (real-time) + Carbon/Graphite (historical time-series)
+- **Enhanced Grafana Dashboard**: 10+ panels with gauges, bar charts, pie charts, and time-series graphs
 
 ## Components
 
@@ -84,7 +85,7 @@ Automated response system that integrates with pfSense.
 - Action logging
 
 ### 4. **prometheus_exporter.py**
-Metrics exporter for Prometheus monitoring.
+Metrics exporter for Prometheus monitoring with persistent state management.
 
 **Metrics:**
 - Total alerts processed & by severity
@@ -92,8 +93,48 @@ Metrics exporter for Prometheus monitoring.
 - Processing time & throughput
 - Top source IPs and signatures
 - Training data collection progress
+- Anomaly scores & pattern detections
+- Labeling progress percentage
 
-### 5. **training_data_collector.py**
+**New Features:**
+- Persistent state (survives restarts)
+- Auto-save every 60 seconds
+- State restoration on startup
+
+### 5. **state_manager.py**
+Persistent state management for Prometheus counters.
+
+**Features:**
+- JSON-based state persistence
+- Atomic writes (temp file + rename)
+- Background auto-save thread
+- Graceful shutdown with final save
+- Restores counters on service restart
+
+**State Saved:**
+- All alert counters and distributions
+- Threat scores and processing stats
+- Training data progress
+- Top source IPs (top 50)
+
+### 6. **carbon_exporter.py**
+Carbon/Graphite integration for historical time-series data.
+
+**Features:**
+- Exports Prometheus metrics to Graphite
+- Periodic batch sends (every 10s)
+- TCP socket connection to Carbon
+- Converts all key metrics to Graphite format
+- Enables historical data queries
+
+**Metrics Exported:**
+- Alert rates and distributions
+- Threat scores and anomaly scores
+- Training progress
+- Pattern detections
+- Block/rate-limit statistics
+
+### 7. **training_data_collector.py**
 Logs ML classification decisions for building supervised learning datasets.
 
 **Features:**
@@ -103,30 +144,7 @@ Logs ML classification decisions for building supervised learning datasets.
 - 6-month retention policy
 - Tracks all 16 feature dimensions + classification result
 
-### 6. **review_threats.py**
-Interactive CLI tool for reviewing and labeling training data.
-
-**Features:**
-- Color-coded threat display
-- Filter by severity, action, or time range
-- One-key labeling (T/B/F/S/N/Q)
-- Optional notes for important labels
-- Session statistics and progress tracking
-- Batch review workflows
-
-**Usage:**
-```bash
-# Review HIGH and CRITICAL from last 24h
-./review_threats.py --severity HIGH,CRITICAL --since 24
-
-# Review blocked IPs
-./review_threats.py --action BLOCK
-
-# Show statistics
-./review_threats.py --stats-only
-```
-
-### 7. **ai_suricata.py**
+### 6. **ai_suricata.py**
 Main integrated system combining all components.
 
 ## Installation & Setup
@@ -347,42 +365,3 @@ Built on:
 - pfSense Firewall (https://www.pfsense.org/)
 - scikit-learn ML library
 - Emerging Threats ruleset
-
-## 🎯 Quick Access Commands
-
-After installation, the review tool and commands are accessible from your shell:
-
-### Shell Banner Commands
-
-Type `banner` to see the full command reference including:
-
-**Security Monitoring:**
-- `cd ~/pfsense/ai_suricata` - Navigate to IDS directory
-- `./manage.sh watch` - Live threat monitoring
-- `./manage.sh threats` - HIGH/CRITICAL alerts only
-- `./manage.sh stats` - Statistics dashboard
-
-**Training Data Review:**
-- `./review_threats.py --stats-only` - Check labeling progress
-- `./review_threats.py --severity CRITICAL` - Review critical threats
-- `./review_threats.py --action BLOCK` - Validate blocked IPs
-- `training_data/` - JSONL log files
-- `docs/TRAINING_DATA.md` - Full labeling guide
-
-### Quick Stats
-
-```bash
-# Check current collection
-curl -s http://localhost:9102/metrics | grep training_examples
-
-# View today's data
-ls -lh ~/pfsense/ai_suricata/training_data/
-
-# Count collected examples
-wc -l ~/pfsense/ai_suricata/training_data/decisions.*.jsonl
-```
-
----
-
-**Commands are integrated into your shell banner for easy access!** Type `banner` after installation to see all available commands.
-
